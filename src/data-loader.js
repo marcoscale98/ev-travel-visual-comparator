@@ -35,7 +35,7 @@ class DataLoader {
             });
 
             // All vehicles travel at constant 110 km/h highway speed
-            vehicle.speed = 110;
+            vehicle.averageSpeed = 110;
             
             vehicles.push(vehicle);
         }

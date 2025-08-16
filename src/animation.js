@@ -6,15 +6,41 @@ class SimulationEngine {
         this.batterySystem = new BatterySystem();
         
         this.isRunning = false;
-        this.speedMultiplier = 60;
+        this.speedMultiplier = 900;
         this.elapsedTime = 0;
         this.lastTimestamp = 0;
         this.allCompleted = false;
         
         this.vehicles = [];
-        this.routeStartX = 100;
-        this.routeEndX = 700;
-        this.totalDistance = 1000;
+        
+        // Layout configuration - centralized constants
+        this.layout = {
+            route: {
+                startX: 100,
+                endX: 700,
+                totalDistance: 1000
+            },
+            vehicle: {
+                startY: 100,
+                verticalSpacing: 150,
+                travelLineOffset: 70 // Distance below vehicle path to travel line
+            },
+            markers: {
+                distances: [250, 500, 750],
+                height: 10, // Half height of marker lines
+                fontSize: 12
+            },
+            labels: {
+                fontSize: 14,
+                offset: 20
+            }
+        };
+        
+        // Cache for expensive calculations
+        this.renderCache = {
+            travelLinePositions: new Map(),
+            vehiclePositions: new Map()
+        };
         
         this.init();
     }
@@ -37,14 +63,17 @@ class SimulationEngine {
                     color: colors[index],
                     speed: data.averageSpeed || 80,
                     position: 0,
-                    x: this.routeStartX,
-                    y: 100 + (index * 80),
+                    x: this.layout.route.startX,
+                    y: this.layout.vehicle.startY + (index * this.layout.vehicle.verticalSpacing),
                     completionTime: null,
                     hasCompleted: false,
                     battery: this.batterySystem.calculateBatteryCapacity(data),
                     charging: null,
                     vehicleData: data
                 }));
+                
+                // Pre-calculate travel line positions for performance
+                this._cacheRenderPositions();
             }
             
             console.log('Vehicles initialized:', this.vehicles);
@@ -66,14 +95,17 @@ class SimulationEngine {
             color: color,
             speed: speeds[index],
             position: 0,
-            x: this.routeStartX,
-            y: 100 + (index * 80),
+            x: this.layout.route.startX,
+            y: this.layout.vehicle.startY + (index * this.layout.vehicle.verticalSpacing),
             completionTime: null,
             hasCompleted: false,
             battery: this.batterySystem.calculateBatteryCapacity({ 'first-leg-distance': 250, 'next-leg-distance': 200 }),
             charging: null,
             vehicleData: { 'usable-battery': 50, 'first-leg-distance': 250, 'next-leg-distance': 200 }
         }));
+        
+        // Pre-calculate render positions
+        this._cacheRenderPositions();
     }
 
     start() {
@@ -116,7 +148,7 @@ class SimulationEngine {
         }
 
         this.vehicles.forEach(vehicle => {
-            if (vehicle.position < this.totalDistance && vehicle.speed && !isNaN(vehicle.speed)) {
+            if (vehicle.position < this.layout.route.totalDistance && vehicle.speed && !isNaN(vehicle.speed)) {
                 // Check if vehicle is charging
                 if (vehicle.charging && vehicle.charging.isCharging) {
                     // Vehicle is charging - update charging progress
@@ -133,7 +165,7 @@ class SimulationEngine {
                     
                     if (!isNaN(distanceIncrement)) {
                         const previousPosition = vehicle.position;
-                        vehicle.position = Math.min(vehicle.position + distanceIncrement, this.totalDistance);
+                        vehicle.position = Math.min(vehicle.position + distanceIncrement, this.layout.route.totalDistance);
                         
                         // Update battery level based on distance traveled
                         this.batterySystem.updateBatteryLevel(vehicle, vehicle.position);
@@ -145,14 +177,14 @@ class SimulationEngine {
                         }
                         
                         // Check if vehicle just completed the journey
-                        if (!vehicle.hasCompleted && previousPosition < this.totalDistance && vehicle.position >= this.totalDistance) {
+                        if (!vehicle.hasCompleted && previousPosition < this.layout.route.totalDistance && vehicle.position >= this.layout.route.totalDistance) {
                             vehicle.hasCompleted = true;
                             vehicle.completionTime = this.elapsedTime;
                             console.log(`${vehicle.name} completed in ${Math.floor(vehicle.completionTime / 60)}h ${Math.floor(vehicle.completionTime % 60)}m`);
                         }
                         
-                        const progress = vehicle.position / this.totalDistance;
-                        vehicle.x = this.routeStartX + (progress * (this.routeEndX - this.routeStartX));
+                        const progress = vehicle.position / this.layout.route.totalDistance;
+                        vehicle.x = this.layout.route.startX + (progress * (this.layout.route.endX - this.layout.route.startX));
                     }
                 }
             }
@@ -179,58 +211,144 @@ class SimulationEngine {
     }
 
     drawRoute() {
-        this.ctx.strokeStyle = '#333';
-        this.ctx.lineWidth = 3;
+        const routeStyle = { strokeStyle: '#333', lineWidth: 2 };
+        const labelStyle = { fillStyle: '#333', font: `${this.layout.labels.fontSize}px Arial` };
+        
+        // Draw all travel lines efficiently
+        this._drawTravelLines(routeStyle);
+        
+        // Draw route labels only on bottom line
+        this._drawRouteLabels(labelStyle);
+    }
+    
+    _drawTravelLines(style) {
+        this._applyCanvasStyle(style);
+        
+        this.vehicles.forEach((vehicle, index) => {
+            const lineY = this._getCachedTravelLineY(index);
+            this._drawSingleLine(this.layout.route.startX, this.layout.route.endX, lineY);
+        });
+    }
+    
+    _drawRouteLabels(style) {
+        this._applyCanvasStyle(style);
+        
+        const bottomLineY = this._getCachedTravelLineY(this.vehicles.length - 1);
+        const labelOffset = this.layout.labels.offset;
+        
+        this.ctx.fillText('0 km', this.layout.route.startX - labelOffset, bottomLineY + labelOffset);
+        this.ctx.fillText(`${this.layout.route.totalDistance} km`, this.layout.route.endX - 30, bottomLineY + labelOffset);
+    }
+    
+    _drawSingleLine(startX, endX, y) {
         this.ctx.beginPath();
-        this.ctx.moveTo(this.routeStartX, 400);
-        this.ctx.lineTo(this.routeEndX, 400);
+        this.ctx.moveTo(startX, y);
+        this.ctx.lineTo(endX, y);
         this.ctx.stroke();
+    }
+    
+    _applyCanvasStyle(style) {
+        Object.entries(style).forEach(([property, value]) => {
+            this.ctx[property] = value;
+        });
+    }
 
-        this.ctx.fillStyle = '#333';
-        this.ctx.font = '14px Arial';
-        this.ctx.fillText('0 km', this.routeStartX - 20, 420);
-        this.ctx.fillText('1000 km', this.routeEndX - 30, 420);
+    getTravelLineY(vehicleIndex) {
+        // Travel line positioned below each vehicle's path
+        return this.layout.vehicle.startY + (vehicleIndex * this.layout.vehicle.verticalSpacing) + this.layout.vehicle.travelLineOffset;
+    }
+    
+    _getCachedTravelLineY(vehicleIndex) {
+        if (!this.renderCache.travelLinePositions.has(vehicleIndex)) {
+            this.renderCache.travelLinePositions.set(vehicleIndex, this.getTravelLineY(vehicleIndex));
+        }
+        return this.renderCache.travelLinePositions.get(vehicleIndex);
+    }
+    
+    _cacheRenderPositions() {
+        // Pre-calculate all travel line positions for better performance
+        this.vehicles.forEach((vehicle, index) => {
+            this._getCachedTravelLineY(index);
+        });
     }
 
     drawDistanceMarkers() {
-        const markers = [250, 500, 750];
-        this.ctx.strokeStyle = '#666';
-        this.ctx.lineWidth = 1;
+        const markerStyle = { strokeStyle: '#666', lineWidth: 1 };
+        const textStyle = { fillStyle: '#666', font: `${this.layout.markers.fontSize}px Arial` };
+        const bottomLineY = this._getCachedTravelLineY(this.vehicles.length - 1);
         
-        markers.forEach(distance => {
-            const x = this.routeStartX + (distance / this.totalDistance) * (this.routeEndX - this.routeStartX);
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 395);
-            this.ctx.lineTo(x, 405);
-            this.ctx.stroke();
+        this._applyCanvasStyle(markerStyle);
+        
+        this.layout.markers.distances.forEach(distance => {
+            const x = this._calculateMarkerX(distance);
+            this._drawMarkerLine(x, bottomLineY);
             
-            this.ctx.fillStyle = '#666';
-            this.ctx.font = '12px Arial';
-            this.ctx.fillText(`${distance}`, x - 10, 390);
+            this._applyCanvasStyle(textStyle);
+            this._drawMarkerLabel(distance, x, bottomLineY);
         });
+    }
+    
+    _calculateMarkerX(distance) {
+        const routeWidth = this.layout.route.endX - this.layout.route.startX;
+        return this.layout.route.startX + (distance / this.layout.route.totalDistance) * routeWidth;
+    }
+    
+    _drawMarkerLine(x, bottomLineY) {
+        const markerHeight = this.layout.markers.height;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, bottomLineY - markerHeight / 2);
+        this.ctx.lineTo(x, bottomLineY + markerHeight / 2);
+        this.ctx.stroke();
+    }
+    
+    _drawMarkerLabel(distance, x, bottomLineY) {
+        this.ctx.fillText(`${distance}`, x - 10, bottomLineY - 10);
     }
 
     drawChargingStops() {
-        // Draw charging plug icons for all recorded charging stops
-        this.vehicles.forEach(vehicle => {
+        this.vehicles.forEach((vehicle, vehicleIndex) => {
             const chargingStops = this.batterySystem.getChargingStops(vehicle.name);
+            const lineY = this._getCachedTravelLineY(vehicleIndex);
+            
             chargingStops.forEach(stop => {
-                const x = this.routeStartX + (stop.location / this.totalDistance) * (this.routeEndX - this.routeStartX);
-                
-                // Draw charging plug icon using vehicle's color
-                this.ctx.fillStyle = vehicle.color;
-                this.ctx.font = 'bold 16px Arial';
-                this.ctx.fillText('🔌', x - 8, 385);
-                
-                // Draw small marker on route using vehicle's color
-                this.ctx.strokeStyle = vehicle.color;
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.moveTo(x, 395);
-                this.ctx.lineTo(x, 405);
-                this.ctx.stroke();
+                this._drawSingleChargingStop(vehicle, stop, lineY, vehicleIndex);
             });
         });
+    }
+    
+    _drawSingleChargingStop(vehicle, stop, lineY, vehicleIndex) {
+        const baseX = this._calculateChargingStopX(stop.location);
+        
+        // Add horizontal offset to prevent overlapping
+        const horizontalOffset = (vehicleIndex - 1) * 12; // 12px spacing between vehicles
+        const x = baseX + horizontalOffset;
+        
+        // Draw charging plug icon
+        this._drawChargingIcon(vehicle.color, x, lineY);
+        
+        // Draw charging marker line
+        this._drawChargingMarker(vehicle.color, x, lineY);
+    }
+    
+    _calculateChargingStopX(location) {
+        const routeWidth = this.layout.route.endX - this.layout.route.startX;
+        return this.layout.route.startX + (location / this.layout.route.totalDistance) * routeWidth;
+    }
+    
+    _drawChargingIcon(color, x, lineY) {
+        const iconStyle = { fillStyle: color, font: 'bold 16px Arial' };
+        this._applyCanvasStyle(iconStyle);
+        this.ctx.fillText('🔌', x - 8, lineY - 15);
+    }
+    
+    _drawChargingMarker(color, x, lineY) {
+        const markerStyle = { strokeStyle: color, lineWidth: 4 };
+        this._applyCanvasStyle(markerStyle);
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, lineY - 8);
+        this.ctx.lineTo(x, lineY + 8);
+        this.ctx.stroke();
     }
 
     drawVehicles() {
@@ -334,7 +452,7 @@ class SimulationEngine {
         this.allCompleted = false;
         this.vehicles.forEach(vehicle => {
             vehicle.position = 0;
-            vehicle.x = this.routeStartX;
+            vehicle.x = this.layout.route.startX;
             vehicle.completionTime = null;
             vehicle.hasCompleted = false;
             if (vehicle.battery) {
