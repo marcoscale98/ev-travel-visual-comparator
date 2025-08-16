@@ -22,8 +22,19 @@ The `data/ev-data.csv` contains the following fields:
 ```csv
 Porsche Taycan Plus (2024-2025),97.0,429,234,321,175
 Kia EV3 Long Range (2024-2025),78.0,330,180,142,78
-Fiat 500e Hatchback 24 kWh (2020-2025),21.3,97,53,55,30
+Fiat 500e Hatchbook 24 kWh (2020-2025),21.3,97,53,55,30
 ```
+
+### Physics Implementation
+All vehicles travel at constant **110 km/h** highway speed:
+
+**Implementation Details**:
+- **Constant Speed**: 110 km/h hardcoded in animation engine
+- **Distance Calculation**: `distance = 110 km/h × time_hours`
+- **CSV Speed Data**: Used only for battery consumption calculations, not vehicle movement
+- **Realistic Behavior**: Consistent highway EV travel simulation
+
+**Movement Formula**: `position += 110 × (simulatedMinutes / 60)`
 
 ## Mathematical Model
 
@@ -92,15 +103,19 @@ Based on the mathematical model:
 
 #### BatterySystem Class (`src/battery-system.js`)
 - `calculateBatteryCapacity()`: Initializes battery properties from CSV data
-- `updateBatteryLevel()`: Calculates real-time battery depletion
-- `needsCharging()`: Detects 10% threshold for charging
-- `updateCharging()`: Manages 15-minute charging sessions
+- `updateBatteryLevel()`: Calculates real-time battery depletion based on distance
+- `needsCharging()`: Detects 10% threshold for charging stops
+- `startCharging()`: Initiates 15-minute charging session
+- `updateCharging()`: Manages charging progress and completion
 - `getVehicleState()`: Returns DRIVING/CHARGING/ARRIVED status
+- `getChargingStops()`: Tracks charging locations for visual display
 
 #### Integration Points
-- **Animation Loop**: Real-time battery updates during simulation
-- **UI Components**: Dynamic battery indicators and charging progress
-- **Visual Rendering**: State-based vehicle appearance and charging markers
+- **Animation Loop**: 60fps real-time battery updates during simulation
+- **Physics Engine**: Constant 110 km/h movement with distance-based battery depletion
+- **UI Components**: Dynamic battery indicators and charging progress displays
+- **Visual Rendering**: State-based vehicle appearance and charging plug markers
+- **State Management**: Proper transitions between DRIVING/CHARGING/ARRIVED states
 
 ### State Management
 The system tracks multiple states for each vehicle:
@@ -125,10 +140,11 @@ The system tracks multiple states for each vehicle:
 3. **Charging Duration**: Exactly 15 minutes for all vehicles
 
 ### Performance Characteristics
-- Realistic battery depletion curves
-- Consistent energy consumption rates
-- Proper state transitions between legs
-- Visual feedback matching actual vehicle states
+- **Realistic Physics**: Constant 110 km/h highway speed simulation
+- **Accurate Battery Math**: Distance-based depletion with consistent kWh/km rates
+- **Smooth Animation**: 60fps Canvas rendering with proper state transitions
+- **Visual Feedback**: Real-time battery levels, charging animations, and route markers
+- **State Integrity**: Prevents multiple charging attempts and ensures proper leg transitions
 
 ## Future Enhancements
 

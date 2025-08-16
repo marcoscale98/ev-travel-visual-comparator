@@ -126,7 +126,10 @@ class SimulationEngine {
                     }
                 } else {
                     // Vehicle is driving - update position and battery
-                    const distanceIncrement = vehicle.speed * simulatedMinutes;
+                    // All vehicles travel at constant highway speed of 110 km/h
+                    const currentSpeed = 110; // km/h
+                    const simulatedHours = simulatedMinutes / 60; // Convert minutes to hours
+                    const distanceIncrement = currentSpeed * simulatedHours; // km/h * hours = km
                     
                     if (!isNaN(distanceIncrement)) {
                         const previousPosition = vehicle.position;
@@ -135,8 +138,8 @@ class SimulationEngine {
                         // Update battery level based on distance traveled
                         this.batterySystem.updateBatteryLevel(vehicle, vehicle.position);
                         
-                        // Check if vehicle needs charging
-                        if (this.batterySystem.needsCharging(vehicle) && !vehicle.hasCompleted) {
+                        // Check if vehicle needs charging and isn't already charging
+                        if (this.batterySystem.needsCharging(vehicle) && !vehicle.hasCompleted && (!vehicle.charging || !vehicle.charging.isCharging)) {
                             this.batterySystem.startCharging(vehicle, this.elapsedTime, vehicle.position);
                             console.log(`${vehicle.name} started charging at ${Math.round(vehicle.position)}km with ${Math.round(vehicle.battery.currentLevel)}% battery`);
                         }

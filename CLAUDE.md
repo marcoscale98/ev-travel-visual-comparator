@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **ALWAYS Use WebFetch, WebSearch, and MCP tools when**:
   - You are dealing with libraries, APIs, or external resources
 - **During planning, consider potential breaking changes** that could affect existing functionality
-- **Maintain documentation up-to-date and lean** - No hard-to-maintain info (like line numbers). No duplication between CLAUDE.md and README.md
 - **Concise git commit messages** - Informative but max 10 lines (title + summary)
-- **Use @code-refactoring-expert agent after code implementation** before finishing turn
+- **Use @agent-code-refactoring-expert agent after code implementation** before finishing turn
+- **Use @agent-documentation-mantainer agent after code implementation** before finishing turn
 - **Write documentation and code in English**
 - **Stay focused on the user request** - Reread the user prompt after every your 5 iterations (messages, tool calls, or thinking).
 - **Prefer debugging tools that you can control** (if it's simple to make) - try to avoid copying logs from the console or browser to the chat
@@ -56,6 +56,13 @@ The EV data (`data/ev-data.csv`) contains:
 - `next-leg-distance`: Range on subsequent legs in km (next leg drains the battery from charged level to 10%)
 - `next-leg-duration`: Travel time for subsequent legs in minutes
 
+### Physics Implementation
+All vehicles travel at constant **110 km/h** highway speed throughout the simulation:
+- **Implementation**: Hardcoded constant speed in animation engine
+- **Distance Formula**: `distance = 110 km/h × time_hours`
+- **Realistic Behavior**: Consistent with highway EV travel speeds
+- **CSV Data**: Vehicle speed data used only for battery calculations, not movement
+
 ### Battery Charging Mathematics
 
 **Core principle**: Energy consumption rate (kWh/km) remains constant for each vehicle.
@@ -74,21 +81,23 @@ Current vehicles: Porsche Taycan Plus, Kia EV3 Long Range, Fiat 500e Hatchback
 
 ## Simulation Logic
 
-Based on README specifications:
-- Cars start simultaneously with full battery
-- Travel at constant speed until 10% battery remaining
+**Current Implementation**:
+- Cars start simultaneously with 100% battery
+- Travel at constant 110 km/h until 10% battery remaining
 - Stop immediately for exactly 15 minutes of charging
-- Simulation runs at configurable speed multiplier (default 60x, shown as 20x in prototype)
-- Track charging costs separately for home vs public charging
+- Simulation speed: 60x multiplier (60 simulated minutes per 1 real minute)
+- Real-time battery depletion based on distance traveled
+- Visual states: DRIVING/CHARGING/ARRIVED with proper animations
+- Charging stops tracked and displayed with plug icons on route
 
 ## Development Setup
 
-**Current Setup (Sprint 1)**:
-- ✅ HTML5 Canvas for smooth animation
+**Current Setup (Sprints 1 & 2 Complete)**:
+- ✅ HTML5 Canvas for 60fps animation
 - ✅ Vanilla JavaScript (no frameworks/build tools)
-- ✅ Modular structure: data-loader.js, animation.js, ui-controls.js
-- ✅ CSV data parsing implemented
-- ✅ Visual simulation engine working
+- ✅ Modular structure: data-loader.js, animation.js, ui-controls.js, battery-system.js
+- ✅ CSV data parsing and battery calculations
+- ✅ Complete visual simulation with battery and charging systems
 
 **To run**: 
 - Simple: Open `index.html` in a web browser
@@ -109,6 +118,8 @@ Based on README specifications:
 3. ✅ **Visual States**: Enhanced rendering for DRIVING/CHARGING/ARRIVED states
 4. ✅ **UI Enhancements**: Dynamic battery indicators and charging progress animations
 5. ✅ **Charging Markers**: Visual charging plug icons on route at stop locations
+6. ✅ **Physics Engine**: Constant 110 km/h movement with proper time/distance calculations
+7. ✅ **State Management**: Complete vehicle state tracking and transitions
 
 **Future Sprints**:
 - Cost calculation inputs and display

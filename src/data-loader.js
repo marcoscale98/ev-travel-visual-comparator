@@ -34,8 +34,8 @@ class DataLoader {
                 }
             });
 
-            const averageSpeed = this.calculateAverageSpeed(vehicle);
-            vehicle.averageSpeed = averageSpeed;
+            // All vehicles travel at constant 110 km/h highway speed
+            vehicle.speed = 110;
             
             vehicles.push(vehicle);
         }
@@ -43,20 +43,6 @@ class DataLoader {
         return vehicles;
     }
 
-    calculateAverageSpeed(vehicle) {
-        const totalDistance = 1000;
-        const firstLegTime = vehicle['first-leg-duration'];
-        const firstLegDist = vehicle['first-leg-distance'];
-        
-        const remainingDistance = totalDistance - firstLegDist;
-        const nextLegDistance = vehicle['next-leg-distance'];
-        const nextLegTime = vehicle['next-leg-duration'];
-        
-        const numberOfNextLegs = Math.ceil(remainingDistance / nextLegDistance);
-        const totalTime = firstLegTime + (numberOfNextLegs * nextLegTime);
-        
-        return totalDistance / totalTime * 60;
-    }
 
     getVehicleColors() {
         return ['#28a745', '#dc3545', '#fd7e14'];

@@ -6,17 +6,19 @@ A web application to compare visually the travel times of electric vehicles (EVs
 
 The user must be able to see via the UI what the travel times and costs are for an EV on a 1000 km journey.
 
-### Current Implementation (Sprint 1)
+### Current Implementation (Sprints 1 & 2 Complete)
 - ✅ Visual simulation of 3 EVs racing on 1000km route
-- ✅ Real-time vehicle movement with different speeds
-- ✅ Play/pause controls and speed multiplier (20x, 60x)
-- ✅ Time tracking and distance markers
-- ✅ Clean UI matching the prototype design
+- ✅ Real-time vehicle movement at constant 110 km/h
+- ✅ Complete battery system with realistic depletion
+- ✅ 15-minute charging stops with proper battery calculations
+- ✅ Play/pause controls and 60x speed multiplier
+- ✅ Real-time battery indicators and charging animations
+- ✅ Visual charging markers and state management
+- ✅ Clean UI with dynamic battery displays
 
 ### Planned Features (Future Sprints)
-- Battery level simulation and charging stops
 - Cost calculations for home vs public charging
-- Detailed charging indicators and analytics
+- Enhanced charging analytics and cost displays
 
 **NOTE**: This is a project in active development.
 
@@ -42,17 +44,18 @@ The UI shows:
 
 ## Cars behavior
 
-### Current Implementation (Sprint 1)
-- The cars start simultaneously and race towards the 1000km destination
-- Each car travels at its own constant speed based on real EV data
-- Cars have infinite battery (no charging stops in this sprint)
-- Visual indicators show real-time position and arrival status
+### Current Implementation (Sprints 1 & 2 Complete)
+- Cars start simultaneously with 100% battery
+- All vehicles travel at constant 110 km/h highway speed
+- Battery depletes realistically based on distance traveled
+- Cars stop to recharge when battery reaches 10%
+- Charging stops last exactly 15 minutes with proper level calculations
+- Visual states: DRIVING (battery %), CHARGING (progress %), ARRIVED
+- Real-time charging plug markers show stop locations on route
 
 ### Planned Behavior (Future Sprints)  
-- Cars will start with full battery and deplete over time
-- Cars will stop to recharge when battery reaches 10%
-- Charging stops will last exactly 15 minutes
-- Different charging costs for home vs public charging
+- Cost calculations with different rates for home vs public charging
+- Enhanced charging analytics and cost comparisons
 
 ## Getting Started
 
