@@ -3,6 +3,7 @@ class SimulationEngine {
         this.canvas = document.getElementById('simulation-canvas');
         this.ctx = this.canvas.getContext('2d');
         this.dataLoader = new DataLoader();
+        this.batterySystem = new BatterySystem();
         
         this.isRunning = false;
         this.speedMultiplier = 60;
@@ -39,7 +40,10 @@ class SimulationEngine {
                     x: this.routeStartX,
                     y: 100 + (index * 80),
                     completionTime: null,
-                    hasCompleted: false
+                    hasCompleted: false,
+                    battery: this.batterySystem.calculateBatteryCapacity(data),
+                    charging: null,
+                    vehicleData: data
                 }));
             }
             
@@ -65,7 +69,10 @@ class SimulationEngine {
             x: this.routeStartX,
             y: 100 + (index * 80),
             completionTime: null,
-            hasCompleted: false
+            hasCompleted: false,
+            battery: this.batterySystem.calculateBatteryCapacity({ 'first-leg-distance': 250, 'next-leg-distance': 200 }),
+            charging: null,
+            vehicleData: { 'usable-battery': 50, 'first-leg-distance': 250, 'next-leg-distance': 200 }
         }));
     }
 
@@ -110,21 +117,40 @@ class SimulationEngine {
 
         this.vehicles.forEach(vehicle => {
             if (vehicle.position < this.totalDistance && vehicle.speed && !isNaN(vehicle.speed)) {
-                const distanceIncrement = vehicle.speed * simulatedMinutes;
-                
-                if (!isNaN(distanceIncrement)) {
-                    const previousPosition = vehicle.position;
-                    vehicle.position = Math.min(vehicle.position + distanceIncrement, this.totalDistance);
-                    
-                    // Check if vehicle just completed the journey
-                    if (!vehicle.hasCompleted && previousPosition < this.totalDistance && vehicle.position >= this.totalDistance) {
-                        vehicle.hasCompleted = true;
-                        vehicle.completionTime = this.elapsedTime;
-                        console.log(`${vehicle.name} completed in ${Math.floor(vehicle.completionTime / 60)}h ${Math.floor(vehicle.completionTime % 60)}m`);
+                // Check if vehicle is charging
+                if (vehicle.charging && vehicle.charging.isCharging) {
+                    // Vehicle is charging - update charging progress
+                    const chargingComplete = this.batterySystem.updateCharging(vehicle, this.elapsedTime);
+                    if (chargingComplete) {
+                        console.log(`${vehicle.name} finished charging at ${Math.round(vehicle.position)}km`);
                     }
+                } else {
+                    // Vehicle is driving - update position and battery
+                    const distanceIncrement = vehicle.speed * simulatedMinutes;
                     
-                    const progress = vehicle.position / this.totalDistance;
-                    vehicle.x = this.routeStartX + (progress * (this.routeEndX - this.routeStartX));
+                    if (!isNaN(distanceIncrement)) {
+                        const previousPosition = vehicle.position;
+                        vehicle.position = Math.min(vehicle.position + distanceIncrement, this.totalDistance);
+                        
+                        // Update battery level based on distance traveled
+                        this.batterySystem.updateBatteryLevel(vehicle, vehicle.position);
+                        
+                        // Check if vehicle needs charging
+                        if (this.batterySystem.needsCharging(vehicle) && !vehicle.hasCompleted) {
+                            this.batterySystem.startCharging(vehicle, this.elapsedTime, vehicle.position);
+                            console.log(`${vehicle.name} started charging at ${Math.round(vehicle.position)}km with ${Math.round(vehicle.battery.currentLevel)}% battery`);
+                        }
+                        
+                        // Check if vehicle just completed the journey
+                        if (!vehicle.hasCompleted && previousPosition < this.totalDistance && vehicle.position >= this.totalDistance) {
+                            vehicle.hasCompleted = true;
+                            vehicle.completionTime = this.elapsedTime;
+                            console.log(`${vehicle.name} completed in ${Math.floor(vehicle.completionTime / 60)}h ${Math.floor(vehicle.completionTime % 60)}m`);
+                        }
+                        
+                        const progress = vehicle.position / this.totalDistance;
+                        vehicle.x = this.routeStartX + (progress * (this.routeEndX - this.routeStartX));
+                    }
                 }
             }
         });
@@ -137,6 +163,7 @@ class SimulationEngine {
         }
 
         this.updateTimeDisplay();
+        this.updateBatteryDisplays();
     }
 
     render() {
@@ -144,6 +171,7 @@ class SimulationEngine {
         
         this.drawRoute();
         this.drawDistanceMarkers();
+        this.drawChargingStops();
         this.drawVehicles();
     }
 
@@ -179,6 +207,29 @@ class SimulationEngine {
         });
     }
 
+    drawChargingStops() {
+        // Draw charging plug icons for all recorded charging stops
+        this.vehicles.forEach(vehicle => {
+            const chargingStops = this.batterySystem.getChargingStops(vehicle.name);
+            chargingStops.forEach(stop => {
+                const x = this.routeStartX + (stop.location / this.totalDistance) * (this.routeEndX - this.routeStartX);
+                
+                // Draw charging plug icon
+                this.ctx.fillStyle = '#007bff';
+                this.ctx.font = 'bold 16px Arial';
+                this.ctx.fillText('🔌', x - 8, 385);
+                
+                // Draw small marker on route
+                this.ctx.strokeStyle = '#007bff';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, 395);
+                this.ctx.lineTo(x, 405);
+                this.ctx.stroke();
+            });
+        });
+    }
+
     drawVehicles() {
         this.vehicles.forEach((vehicle, index) => {
             if (!vehicle.x || !vehicle.y || isNaN(vehicle.x) || isNaN(vehicle.y)) {
@@ -186,15 +237,29 @@ class SimulationEngine {
                 return;
             }
             
+            const state = this.batterySystem.getVehicleState(vehicle);
+            
+            // Draw vehicle circle with state-specific styling
             this.ctx.fillStyle = vehicle.color;
             this.ctx.beginPath();
             this.ctx.arc(vehicle.x, vehicle.y, 12, 0, 2 * Math.PI);
             this.ctx.fill();
             
-            this.ctx.strokeStyle = '#fff';
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
+            // Add special effects for charging state
+            if (state === 'CHARGING') {
+                // Pulsing effect for charging
+                this.ctx.strokeStyle = '#007bff';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]); // Reset dash
+            } else {
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
             
+            // Position display
             this.ctx.fillStyle = '#333';
             this.ctx.font = '12px Arial';
             this.ctx.fillText(
@@ -203,7 +268,8 @@ class SimulationEngine {
                 vehicle.y - 20
             );
             
-            if (vehicle.position >= this.totalDistance) {
+            // State-specific displays
+            if (state === 'ARRIVED') {
                 this.ctx.fillStyle = vehicle.color;
                 this.ctx.font = 'bold 14px Arial';
                 this.ctx.fillText('ARRIVED', vehicle.x - 25, vehicle.y + 25);
@@ -215,6 +281,21 @@ class SimulationEngine {
                     this.ctx.font = '12px Arial';
                     this.ctx.fillText(`${hours}h ${minutes}m`, vehicle.x - 25, vehicle.y + 40);
                 }
+            } else if (state === 'CHARGING') {
+                this.ctx.fillStyle = '#007bff';
+                this.ctx.font = 'bold 14px Arial';
+                this.ctx.fillText('CHARGING', vehicle.x - 30, vehicle.y + 25);
+                
+                // Show charging progress
+                const progress = Math.round(this.batterySystem.getChargingProgress(vehicle, this.elapsedTime));
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText(`${progress}%`, vehicle.x - 12, vehicle.y + 40);
+            } else if (state === 'DRIVING') {
+                // Show battery level
+                const batteryLevel = Math.round(vehicle.battery.currentLevel);
+                this.ctx.fillStyle = batteryLevel <= 10 ? '#dc3545' : '#28a745';
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText(`${batteryLevel}%`, vehicle.x - 12, vehicle.y + 25);
             }
         });
     }
@@ -225,6 +306,26 @@ class SimulationEngine {
         document.getElementById('elapsed-time').textContent = `${hours}h ${minutes}m`;
     }
 
+    updateBatteryDisplays() {
+        const batteryIndicators = document.querySelectorAll('.battery-indicator');
+        this.vehicles.forEach((vehicle, index) => {
+            if (batteryIndicators[index] && vehicle.battery) {
+                const batteryLevel = Math.round(vehicle.battery.currentLevel);
+                const state = this.batterySystem.getVehicleState(vehicle);
+                
+                let displayText = `🔋 ${batteryLevel}%`;
+                if (state === 'CHARGING') {
+                    const progress = Math.round(this.batterySystem.getChargingProgress(vehicle, this.elapsedTime));
+                    displayText = `⚡ Charging ${progress}%`;
+                } else if (state === 'ARRIVED') {
+                    displayText = `🏁 ${batteryLevel}%`;
+                }
+                
+                batteryIndicators[index].textContent = displayText;
+            }
+        });
+    }
+
     reset() {
         this.elapsedTime = 0;
         this.allCompleted = false;
@@ -233,8 +334,17 @@ class SimulationEngine {
             vehicle.x = this.routeStartX;
             vehicle.completionTime = null;
             vehicle.hasCompleted = false;
+            if (vehicle.battery) {
+                vehicle.battery.currentLevel = 100;
+                vehicle.battery.isFirstLeg = true;
+                vehicle.battery.legStartDistance = 0;
+            }
+            vehicle.charging = null;
         });
+        // Clear charging stops
+        this.batterySystem.chargingStops.clear();
         this.updateTimeDisplay();
+        this.updateBatteryDisplays();
         this.render();
     }
 }

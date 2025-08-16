@@ -40,15 +40,35 @@ This is an EV Travel Visual Comparator - a web application that simulates and co
 - **Animation**: Real-time vehicle movement and position tracking
 - **Tech Stack**: Vanilla HTML/CSS/JavaScript (no build tools needed)
 
+**Sprint 2 Complete** - Battery simulation and charging system with:
+- **Battery Logic**: Realistic energy consumption based on CSV vehicle data
+- **Charging Simulation**: 15-minute fast charging with proper battery level calculations
+- **Visual States**: Dynamic battery indicators and charging animations
+- **Math Implementation**: Consistent kWh/km consumption across vehicle legs
+
 ## Data Structure
 
 The EV data (`data/ev-data.csv`) contains:
 - `ev-name`: Vehicle model and year
 - `usable-battery`: Battery capacity in kWh
-- `first-leg-distance`: Range on first leg in km
+- `first-leg-distance`: Range on first leg in km (first leg drains the battery from 100% to 10%)
 - `first-leg-duration`: Travel time for first leg in minutes
-- `next-leg-distance`: Range on subsequent legs in km  
+- `next-leg-distance`: Range on subsequent legs in km (next leg drains the battery from charged level to 10%)
 - `next-leg-duration`: Travel time for subsequent legs in minutes
+
+### Battery Charging Mathematics
+
+**Core principle**: Energy consumption rate (kWh/km) remains constant for each vehicle.
+
+**Charged level after 15-minute charging**:
+```
+charged_level = 10 + 90 × (next-leg-distance / first-leg-distance)
+```
+
+**Results**:
+- Porsche Taycan: 77.4% (429km → 321km legs)
+- Kia EV3: 48.7% (330km → 142km legs)  
+- Fiat 500e: 61.0% (97km → 55km legs)
 
 Current vehicles: Porsche Taycan Plus, Kia EV3 Long Range, Fiat 500e Hatchback
 
@@ -72,7 +92,7 @@ Based on README specifications:
 
 **To run**: 
 - Simple: Open `index.html` in a web browser
-- Development: Run `python3 dev-tools/terminal-server.py` for console streaming
+- Development: Run `python3 dev-tools/terminal-server.py` for console streaming (NO NOT run with `python3 -m http.server`)
 
 ## Key Implementation Areas
 
@@ -83,7 +103,13 @@ Based on README specifications:
 4. ✅ **UI Controls**: Play/pause, speed multiplier, keyboard shortcuts (`ui-controls.js`)
 5. ✅ **Animation System**: Smooth 60fps vehicle movement and position tracking
 
+**Sprint 2 Complete**:
+1. ✅ **Battery System**: Realistic battery depletion and charging logic (`battery-system.js`)
+2. ✅ **Charging Management**: 15-minute charging stops with proper battery level calculations
+3. ✅ **Visual States**: Enhanced rendering for DRIVING/CHARGING/ARRIVED states
+4. ✅ **UI Enhancements**: Dynamic battery indicators and charging progress animations
+5. ✅ **Charging Markers**: Visual charging plug icons on route at stop locations
+
 **Future Sprints**:
-- Battery simulation and charging stop logic
 - Cost calculation inputs and display
 - Enhanced visual effects and charging animations
