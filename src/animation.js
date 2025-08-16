@@ -217,13 +217,13 @@ class SimulationEngine {
             chargingStops.forEach(stop => {
                 const x = this.routeStartX + (stop.location / this.totalDistance) * (this.routeEndX - this.routeStartX);
                 
-                // Draw charging plug icon
-                this.ctx.fillStyle = '#007bff';
+                // Draw charging plug icon using vehicle's color
+                this.ctx.fillStyle = vehicle.color;
                 this.ctx.font = 'bold 16px Arial';
                 this.ctx.fillText('🔌', x - 8, 385);
                 
-                // Draw small marker on route
-                this.ctx.strokeStyle = '#007bff';
+                // Draw small marker on route using vehicle's color
+                this.ctx.strokeStyle = vehicle.color;
                 this.ctx.lineWidth = 2;
                 this.ctx.beginPath();
                 this.ctx.moveTo(x, 395);
