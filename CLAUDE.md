@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **THESE RULES OVERRIDE ALL DEFAULT BEHAVIOR AND MUST BE FOLLOWED EXACTLY:**
 
+- We are working in **agile** mode:
+  - assume I'm a product owner and you are a developer.
+  - I will provide feedback and requirements as we go.
+  - **Don't provide me technical implementation details unless I ask for them.**
+  - The only technical detail you must provide me is **how to run and test the code**
 - **ALWAYS Use WebFetch, WebSearch, and MCP tools when**:
   - You are dealing with libraries, APIs, or external resources
 - **During planning, consider potential breaking changes** that could affect existing functionality
@@ -14,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Use @code-refactoring-expert agent after code implementation** before finishing turn
 - **Write documentation and code in English**
 - **Stay focused on the user request** - Reread the user prompt after every your 5 iterations (messages, tool calls, or thinking).
+- **Prefer debugging tools that you can control** (if it's simple to make) - try to avoid copying logs from the console or browser to the chat
 
 ## Project Overview
 
@@ -27,11 +33,12 @@ This is an EV Travel Visual Comparator - a web application that simulates and co
 
 ## Current State
 
-The project is in early development phase with:
-- **Data**: EV specifications in `data/ev-data.csv` (battery capacity, range data)
-- **Design**: UI prototype in `images/ui-proto.jpg` 
-- **Documentation**: Feature specifications in README.md
-- **No implementation code yet** - this is a greenfield project
+**Sprint 1 Complete** - Basic working prototype with:
+- **Implementation**: Full HTML5 Canvas-based simulation engine
+- **Data**: EV specifications loaded from `data/ev-data.csv`
+- **UI**: Working controls (play/pause, speed multiplier, time display)  
+- **Animation**: Real-time vehicle movement and position tracking
+- **Tech Stack**: Vanilla HTML/CSS/JavaScript (no build tools needed)
 
 ## Data Structure
 
@@ -56,17 +63,27 @@ Based on README specifications:
 
 ## Development Setup
 
-Since no build system exists yet, you'll need to:
-1. Choose appropriate web technologies (suggest HTML5 Canvas or SVG for animation)
-2. Set up package.json with build tools
-3. Create project structure for HTML, CSS, JavaScript
-4. Implement CSV data parsing
-5. Build the visual simulation engine
+**Current Setup (Sprint 1)**:
+- ✅ HTML5 Canvas for smooth animation
+- ✅ Vanilla JavaScript (no frameworks/build tools)
+- ✅ Modular structure: data-loader.js, animation.js, ui-controls.js
+- ✅ CSV data parsing implemented
+- ✅ Visual simulation engine working
+
+**To run**: 
+- Simple: Open `index.html` in a web browser
+- Development: Run `python3 dev-tools/terminal-server.py` for console streaming
 
 ## Key Implementation Areas
 
-1. **Data Layer**: Parse and model EV data from CSV
-2. **Simulation Engine**: Time-based state management for multiple vehicles
-3. **Rendering Engine**: Visual representation of vehicles, route, and charging stops  
-4. **UI Controls**: Play/pause, speed control, cost input fields
-5. **Animation System**: Smooth vehicle movement and state transitions
+**Sprint 1 Complete**:
+1. ✅ **Data Layer**: CSV parsing and speed calculation (`data-loader.js`)
+2. ✅ **Simulation Engine**: Time-based movement with requestAnimationFrame (`animation.js`)
+3. ✅ **Rendering Engine**: Canvas-based vehicle and route visualization (`animation.js`)
+4. ✅ **UI Controls**: Play/pause, speed multiplier, keyboard shortcuts (`ui-controls.js`)
+5. ✅ **Animation System**: Smooth 60fps vehicle movement and position tracking
+
+**Future Sprints**:
+- Battery simulation and charging stop logic
+- Cost calculation inputs and display
+- Enhanced visual effects and charging animations

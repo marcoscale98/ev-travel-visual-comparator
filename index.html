@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Travel Visual Comparator</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <div class="time-display">
+                <span id="elapsed-time">0h 0m</span>
+            </div>
+            <div class="speed-control">
+                <select id="speed-multiplier">
+                    <option value="20">20x</option>
+                    <option value="60" selected>60x</option>
+                </select>
+            </div>
+            <div class="play-control">
+                <button id="play-pause-btn">PLAY</button>
+            </div>
+        </div>
+        
+        <div class="simulation-area">
+            <canvas id="simulation-canvas" width="800" height="400"></canvas>
+        </div>
+        
+        <div class="vehicle-info">
+            <div class="vehicle green">
+                <div class="battery-indicator">🔋 100%</div>
+                <div class="vehicle-icon">🚗</div>
+                <div class="vehicle-name">Porsche Taycan Plus</div>
+            </div>
+            <div class="vehicle red">
+                <div class="battery-indicator">🔋 100%</div>
+                <div class="vehicle-icon">🚗</div>
+                <div class="vehicle-name">Kia EV3 Long Range</div>
+            </div>
+            <div class="vehicle orange">
+                <div class="battery-indicator">🔋 100%</div>
+                <div class="vehicle-icon">🚗</div>
+                <div class="vehicle-name">Fiat 500e Hatchback</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dev-tools/console-bridge.js"></script>
+    <script src="src/data-loader.js"></script>
+    <script src="src/animation.js"></script>
+    <script src="src/ui-controls.js"></script>
+</body>
+</html>

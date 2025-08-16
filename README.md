@@ -6,7 +6,19 @@ A web application to compare visually the travel times of electric vehicles (EVs
 
 The user must be able to see via the UI what the travel times and costs are for an EV on a 1000 km journey.
 
-**NOTE**: This is a project in development, so the features are not yet fully implemented.
+### Current Implementation (Sprint 1)
+- ✅ Visual simulation of 3 EVs racing on 1000km route
+- ✅ Real-time vehicle movement with different speeds
+- ✅ Play/pause controls and speed multiplier (20x, 60x)
+- ✅ Time tracking and distance markers
+- ✅ Clean UI matching the prototype design
+
+### Planned Features (Future Sprints)
+- Battery level simulation and charging stops
+- Cost calculations for home vs public charging
+- Detailed charging indicators and analytics
+
+**NOTE**: This is a project in active development.
 
 ## UI
 
@@ -30,8 +42,30 @@ The UI shows:
 
 ## Cars behavior
 
-- The cars start at the same time and travel towards the destination
-- The cars start with a full battery
-- The cars travel at a constant speed until they reach the destination or need to recharge
-- The cars stop to recharge immediatly (not real but this is a simulation) when their battery is at 10%
-- The cars recharge for exactly 15 minutes
+### Current Implementation (Sprint 1)
+- The cars start simultaneously and race towards the 1000km destination
+- Each car travels at its own constant speed based on real EV data
+- Cars have infinite battery (no charging stops in this sprint)
+- Visual indicators show real-time position and arrival status
+
+### Planned Behavior (Future Sprints)  
+- Cars will start with full battery and deplete over time
+- Cars will stop to recharge when battery reaches 10%
+- Charging stops will last exactly 15 minutes
+- Different charging costs for home vs public charging
+
+## Getting Started
+
+### Quick Start
+1. Open `index.html` in a web browser
+2. Click "PLAY" to start the simulation
+3. Use the speed multiplier dropdown to change simulation speed
+4. Press Space to play/pause, R to reset
+5. Watch the three EVs race to the finish line!
+
+### Development with Console Streaming
+For development and debugging:
+1. Run `python3 dev-tools/terminal-server.py` to start enhanced server with console streaming
+2. Open `http://localhost:8000` in browser
+3. All JavaScript console logs will appear in real-time in the terminal
+4. Perfect for debugging simulation issues and monitoring performance
