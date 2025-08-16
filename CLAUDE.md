@@ -20,6 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Write documentation and code in English**
 - **Stay focused on the user request** - Reread the user prompt after every your 5 iterations (messages, tool calls, or thinking).
 - **Prefer debugging tools that you can control** (if it's simple to make) - try to avoid copying logs from the console or browser to the chat
+- **When troubleshooting a problem, remember to think deeply about the issue** and consider all possible causes before suggesting a solution
 
 ## Project Overview
 
