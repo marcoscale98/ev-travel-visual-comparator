@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git add .)"
     ],
-    "deny": [],
+    "deny": [
+      "Bash(python3 -m http.server 8000)"
+    ],
     "ask": []
   }
 }

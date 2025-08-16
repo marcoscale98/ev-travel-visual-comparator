@@ -8,6 +8,7 @@ class SimulationEngine {
         this.speedMultiplier = 60;
         this.elapsedTime = 0;
         this.lastTimestamp = 0;
+        this.allCompleted = false;
         
         this.vehicles = [];
         this.routeStartX = 100;
@@ -36,7 +37,9 @@ class SimulationEngine {
                     speed: data.averageSpeed || 80,
                     position: 0,
                     x: this.routeStartX,
-                    y: 150 + (index * 40)
+                    y: 100 + (index * 80),
+                    completionTime: null,
+                    hasCompleted: false
                 }));
             }
             
@@ -60,7 +63,9 @@ class SimulationEngine {
             speed: speeds[index],
             position: 0,
             x: this.routeStartX,
-            y: 150 + (index * 40)
+            y: 100 + (index * 80),
+            completionTime: null,
+            hasCompleted: false
         }));
     }
 
@@ -108,13 +113,28 @@ class SimulationEngine {
                 const distanceIncrement = vehicle.speed * simulatedMinutes;
                 
                 if (!isNaN(distanceIncrement)) {
+                    const previousPosition = vehicle.position;
                     vehicle.position = Math.min(vehicle.position + distanceIncrement, this.totalDistance);
+                    
+                    // Check if vehicle just completed the journey
+                    if (!vehicle.hasCompleted && previousPosition < this.totalDistance && vehicle.position >= this.totalDistance) {
+                        vehicle.hasCompleted = true;
+                        vehicle.completionTime = this.elapsedTime;
+                        console.log(`${vehicle.name} completed in ${Math.floor(vehicle.completionTime / 60)}h ${Math.floor(vehicle.completionTime % 60)}m`);
+                    }
                     
                     const progress = vehicle.position / this.totalDistance;
                     vehicle.x = this.routeStartX + (progress * (this.routeEndX - this.routeStartX));
                 }
             }
         });
+
+        // Check if all vehicles have completed and stop the simulation
+        if (!this.allCompleted && this.vehicles.every(vehicle => vehicle.hasCompleted)) {
+            this.allCompleted = true;
+            this.pause();
+            console.log('All vehicles completed the journey. Simulation stopped.');
+        }
 
         this.updateTimeDisplay();
     }
@@ -131,14 +151,14 @@ class SimulationEngine {
         this.ctx.strokeStyle = '#333';
         this.ctx.lineWidth = 3;
         this.ctx.beginPath();
-        this.ctx.moveTo(this.routeStartX, 300);
-        this.ctx.lineTo(this.routeEndX, 300);
+        this.ctx.moveTo(this.routeStartX, 400);
+        this.ctx.lineTo(this.routeEndX, 400);
         this.ctx.stroke();
 
         this.ctx.fillStyle = '#333';
         this.ctx.font = '14px Arial';
-        this.ctx.fillText('0 km', this.routeStartX - 20, 320);
-        this.ctx.fillText('1000 km', this.routeEndX - 30, 320);
+        this.ctx.fillText('0 km', this.routeStartX - 20, 420);
+        this.ctx.fillText('1000 km', this.routeEndX - 30, 420);
     }
 
     drawDistanceMarkers() {
@@ -149,13 +169,13 @@ class SimulationEngine {
         markers.forEach(distance => {
             const x = this.routeStartX + (distance / this.totalDistance) * (this.routeEndX - this.routeStartX);
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 295);
-            this.ctx.lineTo(x, 305);
+            this.ctx.moveTo(x, 395);
+            this.ctx.lineTo(x, 405);
             this.ctx.stroke();
             
             this.ctx.fillStyle = '#666';
             this.ctx.font = '12px Arial';
-            this.ctx.fillText(`${distance}`, x - 10, 290);
+            this.ctx.fillText(`${distance}`, x - 10, 390);
         });
     }
 
@@ -187,6 +207,14 @@ class SimulationEngine {
                 this.ctx.fillStyle = vehicle.color;
                 this.ctx.font = 'bold 14px Arial';
                 this.ctx.fillText('ARRIVED', vehicle.x - 25, vehicle.y + 25);
+                
+                // Display completion time
+                if (vehicle.completionTime !== null) {
+                    const hours = Math.floor(vehicle.completionTime / 60);
+                    const minutes = Math.floor(vehicle.completionTime % 60);
+                    this.ctx.font = '12px Arial';
+                    this.ctx.fillText(`${hours}h ${minutes}m`, vehicle.x - 25, vehicle.y + 40);
+                }
             }
         });
     }
@@ -199,9 +227,12 @@ class SimulationEngine {
 
     reset() {
         this.elapsedTime = 0;
+        this.allCompleted = false;
         this.vehicles.forEach(vehicle => {
             vehicle.position = 0;
             vehicle.x = this.routeStartX;
+            vehicle.completionTime = null;
+            vehicle.hasCompleted = false;
         });
         this.updateTimeDisplay();
         this.render();
